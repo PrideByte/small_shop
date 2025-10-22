@@ -43,7 +43,7 @@ async function getCachedPage(url) {
     try {
         return await fs.readFile(cachePath, 'utf8');
     } catch {
-        pageCache.delete(url);
+        deleteCachedPage(url)
         return null;
     }
 }
@@ -58,6 +58,19 @@ async function writeCachedPage(url, html) {
         pageCache.set(url, filePath);
     } catch (err) {
         console.error(`Ошибка записи кэша для ${url}:`, err);
+    }
+}
+
+// Удаление страницы с диска и Map
+async function deleteCachedPage(url) {
+    try {
+        const filePath = pageCache.get(url);
+        if (filePath) {
+            await fs.unlink(filePath);
+            pageCache.delete(url);
+        }
+    } catch (err) {
+        console.error(`Ошибка при удалении файла ${filePath}:`, err);
     }
 }
 
@@ -159,6 +172,7 @@ const routes = {
             async () => ({
                 title: 'Страница не найдена',
                 description: 'Ошибка 404: страница не найдена.',
+                url: req.url
             }),
             '404',
             404
@@ -215,7 +229,7 @@ function getDynamicHandler(pathname) {
     if (category) {
         return dynamicRoutes['category'](category);
     }
-    
+
     // Иначе, возможно, это товар
     const productSlug = segments.pop();
     const parentPath = segments.join('/');
@@ -269,6 +283,7 @@ async function serveStatic(filePath, res) {
         res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
         res.end(data);
     } catch (err) {
+        console.error(err);
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Not found');
     }
@@ -283,9 +298,8 @@ async function startServer() {
             // Устанавливаем защитные заголовки для каждого ответа
             setSecurityHeaders(res);
 
-            const url = new URL(req.url, `http://${req.headers.host}`);
+            const url = new URL(req.url.replaceAll(/\/{2,}/g, '/'), `http://${req.headers.host}`);
             const pathname = decodeURIComponent(url.pathname).match(/(.+?)\/?$/)[1];
-            console.log(pathname);
 
             if (pathname.startsWith('/static/')) {
                 await serveStatic(pathname, res);
