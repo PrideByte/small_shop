@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "mysql2": "^3.15.2"
+  },
+  "name": "small_shop",
+  "version": "0.0.1",
+  "description": "Small shop implemented using Vanilla versions of NodeJS and JS. No frameworks, no libraries used except mysql2 driver for NodeJS",
+  "main": "server.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
